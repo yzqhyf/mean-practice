@@ -4,10 +4,10 @@
 			</div>
 			<div ng-repeat='post in posts| orderBy:"-upvotes"'>
   			<span class="glyphicon glyphicon-thumbs-up" ng-click = "incrementsUpvotes(post)">upvotes: {{post.upvotes}}</span>
-    		<a ng-show="post.link" href="{{post.links}}">{{post.title}}</a>
+    		<a ng-show="!post.link" href="{{post.links}}">{{post.link}}</a>
     		<span>{{post.title}}</span>
     		<span>
-    			<a href="#/posts/{{$index}}">comments</a>
+    			<a href="#/posts/{{post._id}}">comments</a>
     		</span>
   	    </div>
 		  <form ng-submit="addPost()" style="margin-top: 30px;">

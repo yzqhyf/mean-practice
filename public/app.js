@@ -5,12 +5,22 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
 		.state('home', {
 			url: '/home',
 			templateUrl: '/home.html',
-			controller: 'MainCtrl'
+			controller: 'MainCtrl',
+			resolve: {
+				postPromise: ['posts', function(posts) {
+					return posts.getAll();
+				}]
+			}
 		})
 		.state('posts', {
 			url: '/posts/{id}',
 			templateUrl: '/posts.html',
-			controller: 'PostsCtrl'
+			controller: 'PostsCtrl',
+			resolve: {
+				post: ['$stateParams', 'posts', function($stateParams, posts) {
+					return posts.get($stateParams.id);
+				}]
+			}
 		});
 
 	$urlRouterProvider.otherwise('home');
@@ -28,37 +38,59 @@ app.controller('MainCtrl', ['$scope', 'posts', function($scope, posts) {
 	$scope.posts = posts.posts;
 	$scope.addPost = function() {
 		if(!$scope.title || $scope.title === '') {return;}
-		$scope.posts.push({
+		posts.create({
 			title: $scope.title, 
-			link: $scope.link, 
-			upvotes: 0,
-			comments: []
+			link: $scope.link,
 		});
 		$scope.title = '';
 		$scope.link = '';
-		$scope.comments = [];
 	};
 
 	$scope.incrementsUpvotes = function(post) {
-		post.upvotes += 1;
+		posts.upvote(post);
 	};
 }]);
 
-app.factory('posts', [function() {
+app.factory('posts', ['$http', function($http) {
 	var service = {
 		posts: []
+	};
+	service.getAll = function() {
+		return $http.get('/posts').success(function(data) {
+			angular.copy(data, service.posts);
+		});
+	};
+	service.create = function(posts) {
+		return $http.post('/posts', posts).success(function(data) {
+			service.posts.push(data);
+		});
+	};
+	service.upvote = function(posts) {
+		console.log(posts);
+		return $http.put('/posts/' + posts._id + '/upvote').success(function(data) {
+			posts.upvotes +=1;
+		});
+	};
+	service.get = function(id) {
+		return $http.get('/posts/' + id).then(function(res) {
+			return res.data;
+		});
+	};
+	service.addComment = function(id, comment) {
+		return $http.post('/posts/' + id + '/comments', comment);
 	};
 	return service;
 }]);
 
-app.controller('PostsCtrl',['$scope', '$stateParams', 'posts', function($scope, $stateParams, posts){
-	$scope.post = posts.posts[$stateParams.id];
+app.controller('PostsCtrl',['$scope', 'posts', 'post', function($scope, posts, post){
+	$scope.post = post;
 	$scope.addComment = function() {
 		if($scope.body === '') {return;}
-		$scope.post.comments.push({
+		posts.addComment(post._id, {
 			body: $scope.body,
 			author: 'user',
-			upvotes: 0
+		}).success(function(comment) {
+			$scope.post.comments.push(comment);
 		});
 		$scope.body = '';
 	};
