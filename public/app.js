@@ -27,14 +27,6 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
 }]);
 
 app.controller('MainCtrl', ['$scope', 'posts', function($scope, posts) {
-	
-	$scope.posts = [{title: 'post 1', upvotes: 5},
-	                {title: 'post 2', upvotes: 2},
-	                {title: 'post 3', upvotes: 6},
-	                {title: 'post 4', upvotes: 7},
-	                {title: 'post 5', upvotes:10},
-	                {title: 'post 6', upvotes: 4}
-	                ];
 	$scope.posts = posts.posts;
 	$scope.addPost = function() {
 		if(!$scope.title || $scope.title === '') {return;}
@@ -67,7 +59,8 @@ app.factory('posts', ['$http', function($http) {
 	};
 	service.upvote = function(posts) {
 		console.log(posts);
-		return $http.put('/posts/' + posts._id + '/upvote').success(function(data) {
+		return $http.put('/posts/' + posts._id + '/upvote')
+		.success(function(data) {
 			posts.upvotes +=1;
 		});
 	};
@@ -79,13 +72,25 @@ app.factory('posts', ['$http', function($http) {
 	service.addComment = function(id, comment) {
 		return $http.post('/posts/' + id + '/comments', comment);
 	};
+	service.upvoteComment = function(posts, comment) {
+		console.log("posts Id " + posts._id +  "comment._id :" + comment._id);
+		return $http.put('/posts/' + posts._id + '/comments/' + comment._id +'/upvote')
+		.success(function(data) {
+			comment.upvotes += 1;
+		}).error(function(err) {
+			console.log(err);
+		});
+	};
+
 	return service;
 }]);
 
 app.controller('PostsCtrl',['$scope', 'posts', 'post', function($scope, posts, post){
 	$scope.post = post;
 	$scope.addComment = function() {
-		if($scope.body === '') {return;}
+		if($scope.body === '') {
+			return;
+		}
 		posts.addComment(post._id, {
 			body: $scope.body,
 			author: 'user',
@@ -94,5 +99,9 @@ app.controller('PostsCtrl',['$scope', 'posts', 'post', function($scope, posts, p
 		});
 		$scope.body = '';
 	};
+
+	$scope.incrementsUpvotes = function(comment) {
+		posts.upvoteComment(post, comment);
+	}
 }]);
 

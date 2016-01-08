@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var mongoose = require('mongoose');
+var passport = require('passport');
+var LocalStrategy = require('passport-local');
 var Post = mongoose.model('Post');
 var Comment = mongoose.model('Comment');
 
@@ -84,25 +86,25 @@ router.post('/posts/:post/comments', function(req, res, next) {
 router.param('comment', function(req, res, next, id) {
 	var query = Comment.findById(id);
 
-	query.exec(function(err, post) {
+	query.exec(function(err, comment) {
 		if(err) {
 			return next(err);
 		}
-		if(!post) {
-			return next(new Error('can\t find post'));
+		if(!comment) {
+			return next(new Error('can\t find comment'));
 		}
-
-		req.post.comment = post.comment;
+		req.comment = comment;
 		return next();
 	})
 });
 
-router.post('/posts/:post/comments/:comment/upvote', function(req, res, next) {
-	req.post.comment.upvote(function(err, post) {
+router.put('/posts/:post/comments/:comment/upvote', function(req, res, next) {
+	console.log("post upvode");
+	req.comment.commentUpvote(function(err, comment) {
 		if(err) {
 			return next(err);
 		}
-		res.json(post);
+		res.json(comment);
 	});
 });
 
